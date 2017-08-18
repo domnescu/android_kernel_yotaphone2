@@ -1,0 +1,106 @@
+			Epson s1d13522 e-ink controller
+
+Maintained by Yury Grechishchev <yury.grechishchev@yotadevices.com>
+	      Dmitry Ivanov <dmitriy.ivanov@yotadevices.com>
+
+s1d13522fb is a driver for the Epson e-ink display controller.
+The S1D13522 controller needs to be programmed with a command file prior to
+rendering any images. If you have a command file for the S1D13522 chip, but it
+is named differently, rename it to "epson/cmds1d13522.fw". Driver programs the
+S1D13522 controller during the driver initialization sequence.
+The driver expects the command file "epson/cmds1d13522.fw".
+
+Driver Design
+-------------
+
+The driver is designed using a virtual frame buffer. A virtual frame buffer
+allocates kernel memory and allows the memory to be mapped into the user space.
+A user space  application can read/write this memory as if it were the display
+memory. The device driver periodically copies the virtual frame buffer into the
+real display memory using deferred IO and conversion algorithms.
+
+
+Limitations
+--------------
+s1d13522fb provide a generic interfaces for configuration and data,
+but it is ultimately limited by specific e-paper operation modes and
+communication interface
+
+- Lack of any type of acceleration.
+- A strict and limited set of supported video modes. Currently only
+  RGB565 and BGRA888.
+- Frame rate limited by drawing speed of e-paper also depend on temperature.
+
+
+
+The sysfs interface
+----------------------
+
+s1d13522fb provides several sysfs nodes for configurable parameters and
+additional information. Driver nodes are available on path
+/sys/class/graphics/fbX/ where X the number of framebuffer device.
+
+
+clear_artifacts		Write		Set flag for next screen update to
+					be FULL (slow, but remove ghosting),
+					this flag automatically reset to 0 after
+					first FULL update.
+					Allowed values: 0, 1
+
+update_disable		Write		Disable screen updating while this
+					flag sets to 1. However image data will
+					be transfered to display controller
+					memory but not displayed.
+					Allowed values: 0, 1
+
+update_area		Write		Trigger update for display rectangle
+					region. It could be used with disabled
+					updates flag for animation purpose,
+					sequential regions update and crop
+					updates. The format of input string is:
+					"TOPXxTOPY BOTTOMXxBOTTOMY"
+
+dithering_select	Read/Write	Select dithering algorithm/display
+					operation mode. Actually s1d13522
+					controller works in two generic modes
+					black-white and 16 grayscale. The
+					black-white mode is pretty fast but
+					display only 2 colors. Image displayed
+					in this mode should be prepared with
+					dithering algorithm. Selecting one of
+					dithering algorithm except algorithms
+					with prefix "_16" on the end of name
+					automatically switch controller to
+					b-w mode. Selecting algorithm with
+					prefix "_16" switch it back to
+					grayscale mode. Available algorithms
+					could be read from this node, current
+					algorithm will be selected by brackets
+					"[]" around name.
+
+raw_data		Read/Write	This node allows to get access to raw
+					data which will transfered directly
+					from/to display controller. It could be
+					useful in debugging purposes.
+					Writing in this node will perform
+					sending of written data to controller
+					memory and triggering screen updates
+					with current preferences.
+
+temperature		Read/Write	For normal operating s1d13522 display
+					controller should know current
+					temperature of e-ink screen to
+					use it for waveform correction.
+					For this purpose framebuffer has
+					kernel temperature worker which
+					wakes each 5 min and refresh
+					operating temperature.
+					If it is required automatic temperature
+					correction can disabled by
+					writing user value in range (-20 .. 50)
+					To enable automatic temperature
+					correction write "auto".
+					To get current average value provided
+					by board thermal sensors just read it
+					from this node.
+
