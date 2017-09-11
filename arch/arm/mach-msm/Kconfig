@@ -525,8 +525,8 @@ config ARCH_MSM8226
 	select MSM_SPM_REGULATOR
 	select MSM_JTAG_MM if CORESIGHT_ETM
 	select MSM_CPR_REGULATOR
-	select MSM_RPM_LOG
-	select MSM_RPM_STATS_LOG
+	#select MSM_RPM_LOG
+	#select MSM_RPM_STATS_LOG
 	select ARCH_WANT_KMAP_ATOMIC_FLUSH
 	select ENABLE_VMALLOC_SAVINGS
 
@@ -2867,6 +2867,13 @@ config MSM_DCVS
 	  The DCVS manager allows idle driver to feed the idle information to the
 	  algorithm and the algorithm returns a frequency for the core which is
 	  passed to the frequency change driver.
+
+config BLU_PLUG
+	bool "Dynamic hotplug driver"
+	depends on HOTPLUG_CPU
+	default n
+	help
+	  The Dynamic hotplug driver automatically online/offline CPUs proportional to system load.
 
 config MSM_CPR
 	tristate "Use MSM CPR in S/W mode"
